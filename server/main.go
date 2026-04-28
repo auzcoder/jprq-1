@@ -20,7 +20,10 @@ func main() {
 		log.Fatalf("failed to load conf: %v", err)
 	}
 
-	oauth := github.New(conf.GithubClientID, conf.GithubClientSecret)
+	oauth := github.New(conf.GithubClientID, conf.GithubClientSecret, github.Options{
+		JprqWebURL:        conf.JprqWebURL,
+		JprqInternalToken: conf.JprqInternalToken,
+	})
 
 	err = jprq.Init(conf, oauth)
 	if err != nil {

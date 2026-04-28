@@ -31,7 +31,7 @@ func main() {
 	if clientId == "" || clientSecret == "" {
 		log.Fatalf("missing github client id/secret")
 	}
-	oauth = github.New(clientId, clientSecret)
+	oauth = github.New(clientId, clientSecret, github.Options{})
 
 	http.HandleFunc("/", contentHandler([]byte(html), "text/html"))
 	http.HandleFunc("/config.json", contentHandler([]byte(config), "application/json"))
@@ -92,8 +92,8 @@ func oauthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Auto-add user to allowed list (non-blocking)
-	go autoAllowUser(token)
+	// Subscription / allow-list checks live in jprq-web now;
+	// this endpoint just hands the token back to the desktop app.
 
 	// Check if this is an app-based authentication
 	appCookie, err := r.Cookie("jprq_app")
@@ -140,22 +140,3 @@ func oauthCallback(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(fmt.Sprintf(tokenHtml, token)))
 }
 
-const allowedUsersFile = "/etc/jprq/allowed-users.csv"
-
-func autoAllowUser(token string) {
-	user, err := oauth.Authenticate(token)
-	if err != nil {
-		fmt.Printf("auto-allow: failed to authenticate user: %s\n", err)
-		return
-	}
-
-	file, err := os.OpenFile(allowedUsersFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		fmt.Printf("auto-allow: failed to open file: %s\n", err)
-		return
-	}
-	defer file.Close()
-
-	fmt.Fprintf(file, "%s,desktop\n", user.Login)
-	fmt.Printf("auto-allowed user: %s\n", user.Login)
-}

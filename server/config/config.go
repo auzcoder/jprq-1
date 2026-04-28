@@ -17,6 +17,8 @@ type Config struct {
 	GithubClientID      string
 	GithubClientSecret  string
 	AllowedUsersFile    string
+	JprqWebURL          string
+	JprqInternalToken   string
 }
 
 func (c *Config) Load() error {
@@ -31,6 +33,8 @@ func (c *Config) Load() error {
 	c.GithubClientID = os.Getenv("GITHUB_CLIENT_ID")
 	c.GithubClientSecret = os.Getenv("GITHUB_CLIENT_SECRET")
 	c.AllowedUsersFile = "/etc/jprq/allowed-users.csv"
+	c.JprqWebURL = os.Getenv("JPRQ_WEB_URL")
+	c.JprqInternalToken = os.Getenv("JPRQ_INTERNAL_TOKEN")
 
 	if c.DomainName == "" {
 		return errors.New("jprq domain env is not set")
