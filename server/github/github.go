@@ -47,7 +47,7 @@ func New(clientId, clientSecret string) Authenticator {
 		userEndpoint: "https://api.github.com/user",
 		redirectUri:  "https://jprq.io/oauth-callback",
 		qir2Endpoint: "https://api.42.uz/api/profile/jprq/",
-		authURL:      "https://auth.jprq.io/api/auth/validate",
+		authURL:      "https://web.jprq.io/api/auth/validate",
 		httpClient:   &http.Client{Timeout: 10 * time.Second},
 	}
 }
