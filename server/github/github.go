@@ -105,9 +105,6 @@ func (g github) Authenticate(token string) (User, error) {
 	user, err := g.authenticate(g.userEndpoint, token)
 	if err != nil {
 		user, err = g.authenticate(g.qir2Endpoint, token)
-		if err != nil {
-			return user, err
-		}
 	}
 
 	if user.Allowed {
