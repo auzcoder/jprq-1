@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"os"
 	"runtime"
@@ -64,7 +65,7 @@ func main() {
 		Menu:             appMenu,
 		BackgroundColour: &options.RGBA{R: 15, G: 20, B: 30, A: 1},
 		OnStartup:        app.startup,
-		OnBeforeClose: func(ctx wailsRuntime.Context) bool {
+		OnBeforeClose: func(ctx context.Context) bool {
 			app.clientMu.Lock()
 			isExiting := app.exiting
 			app.clientMu.Unlock()
@@ -75,7 +76,7 @@ func main() {
 			return true // Intercept close, hide instead
 		},
 		Mac: &mac.Options{
-			TitleBar:             mac.TitleBarHiddenInactive(),
+			TitleBar:             mac.TitleBarHiddenInset(),
 			Appearance:           mac.NSAppearanceNameDarkAqua,
 			WebviewIsTransparent: true,
 			WindowIsTranslucent:  true,

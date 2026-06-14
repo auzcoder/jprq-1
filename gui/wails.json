@@ -1,13 +1,19 @@
 {
   "$schema": "https://wails.io/schemas/config.v2.json",
-  "name": "gui",
-  "outputfilename": "gui",
+  "name": "SpeedTunnel",
+  "outputfilename": "SpeedTunnel",
   "frontend:install": "npm install",
   "frontend:build": "npm run build",
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
   "author": {
-    "name": "Abdulkhafiz Davlatov",
+    "name": "Davlatov Abdulhafiz",
     "email": "auz.offical@gmail.com"
+  },
+  "info": {
+    "companyName": "SpeedTunnel",
+    "productName": "SpeedTunnel",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright © 2026 SpeedTunnel"
   }
 }
