@@ -45,10 +45,10 @@ type ConnectionReceived struct {
 	RateLimited bool
 }
 
-func WriteError(eventWriter io.Writer, message string, args ...string) error {
+func WriteError(eventWriter io.Writer, message string, args ...any) error {
 	event := Event[TunnelOpened]{
 		Data: &TunnelOpened{
-			ErrorMessage: fmt.Sprintf(message, args),
+			ErrorMessage: fmt.Sprintf(message, args...),
 		},
 	}
 	event.Write(eventWriter)
@@ -74,12 +74,12 @@ func (e *Event[EventType]) decode(data []byte) error {
 
 func (e *Event[EventType]) Read(conn io.Reader) error {
 	buffer := make([]byte, 2)
-	if _, err := conn.Read(buffer); err != nil {
+	if _, err := io.ReadFull(conn, buffer); err != nil {
 		return err
 	}
 	length := binary.LittleEndian.Uint16(buffer)
 	buffer = make([]byte, length)
-	if _, err := conn.Read(buffer); err != nil {
+	if _, err := io.ReadFull(conn, buffer); err != nil {
 		return err
 	}
 	err := e.decode(buffer)

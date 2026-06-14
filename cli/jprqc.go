@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"encoding/binary"
@@ -12,23 +12,61 @@ import (
 	"github.com/azimjohn/jprq/server/tunnel"
 )
 
-type jprqClient struct {
-	config       Config
-	protocol     string
-	subdomain    string
-	cname        string
-	localServer  string
-	remoteServer string
-	publicServer string
-	httpDebugger debugger.Debugger
+type TunnelClient struct {
+	config        Config
+	protocol      string
+	subdomain     string
+	cname         string
+	localServer   string
+	remoteServer  string
+	publicServer  string
+	httpDebugger  debugger.Debugger
+	eventCon      net.Conn
+	LogCallback   func(string)
+	ErrorCallback func(error)
 }
 
-func (j *jprqClient) Start(port int, debug bool) {
-	eventCon, err := net.Dial("tcp", j.config.Remote.Events)
-	if err != nil {
-		log.Fatalf("failed to connect to event server: %s\n", err)
+func NewTunnelClient(conf Config, protocol string, subdomain string, cname string) *TunnelClient {
+	return &TunnelClient{
+		config:    conf,
+		protocol:  protocol,
+		subdomain: subdomain,
+		cname:     cname,
 	}
-	defer eventCon.Close()
+}
+
+func (j *TunnelClient) logFatal(format string, v ...interface{}) {
+	err := fmt.Errorf(format, v...)
+	if j.ErrorCallback != nil {
+		j.ErrorCallback(err)
+		return
+	}
+	log.Fatal(err)
+}
+
+func (j *TunnelClient) logInfo(format string, v ...interface{}) {
+	msg := fmt.Sprintf(format, v...)
+	if j.LogCallback != nil {
+		j.LogCallback(msg)
+		return
+	}
+	log.Println(msg)
+}
+
+func (j *TunnelClient) Stop() {
+	if j.eventCon != nil {
+		j.eventCon.Close()
+	}
+}
+
+func (j *TunnelClient) Start(port int, debug bool) {
+	var err error
+	j.eventCon, err = net.Dial("tcp", j.config.Remote.Events)
+	if err != nil {
+		j.logFatal("failed to connect to event server: %s", err)
+		return
+	}
+	defer j.eventCon.Close()
 
 	request := events.Event[events.TunnelRequested]{
 		Data: &events.TunnelRequested{
@@ -39,16 +77,19 @@ func (j *jprqClient) Start(port int, debug bool) {
 			CliVersion: version,
 		},
 	}
-	if err := request.Write(eventCon); err != nil {
-		log.Fatalf("failed to send request: %s\n", err)
+	if err := request.Write(j.eventCon); err != nil {
+		j.logFatal("failed to send request: %s", err)
+		return
 	}
 
 	var t events.Event[events.TunnelOpened]
-	if err := t.Read(eventCon); err != nil {
-		log.Fatalf("failed to receive tunnel info: %s\n", err)
+	if err := t.Read(j.eventCon); err != nil {
+		j.logFatal("failed to receive tunnel info: %s", err)
+		return
 	}
 	if t.Data.ErrorMessage != "" {
-		log.Fatalf(t.Data.ErrorMessage)
+		j.logFatal(t.Data.ErrorMessage)
+		return
 	}
 
 	j.localServer = fmt.Sprintf("localhost:%d", port)
@@ -59,37 +100,38 @@ func (j *jprqClient) Start(port int, debug bool) {
 		j.publicServer = fmt.Sprintf("https://%s", t.Data.Hostname)
 	}
 
-	fmt.Printf("Status: \t Online \n")
-	fmt.Printf("Protocol: \t %s \n", strings.ToUpper(j.protocol))
-	fmt.Printf("Forwarded: \t %s -> %s \n", strings.TrimSuffix(j.publicServer, ":80"), j.localServer)
+	j.logInfo("Status: \t Online")
+	j.logInfo("Protocol: \t %s", strings.ToUpper(j.protocol))
+	j.logInfo("Forwarded: \t %s -> %s", strings.TrimSuffix(j.publicServer, ":80"), j.localServer)
 
 	if j.protocol == "http" && debug {
 		j.httpDebugger = debugger.New()
 		if port, err := j.httpDebugger.Run(0); err == nil {
-			fmt.Printf("Http Debugger: \t http://127.0.0.1:%d \n", port)
+			j.logInfo("Http Debugger: \t http://127.0.0.1:%d", port)
 		}
 	}
 
 	var event events.Event[events.ConnectionReceived]
 	for {
-		if err := event.Read(eventCon); err != nil {
-			log.Fatalf("failed to receive connection-received event: %s\n", err)
+		if err := event.Read(j.eventCon); err != nil {
+			j.logFatal("failed to receive connection-received event: %s", err)
+			return
 		}
 		go j.handleEvent(*event.Data)
 	}
 }
 
-func (j *jprqClient) handleEvent(event events.ConnectionReceived) {
+func (j *TunnelClient) handleEvent(event events.ConnectionReceived) {
 	localCon, err := net.Dial("tcp", j.localServer)
 	if err != nil {
-		log.Printf("failed to connect to local server: %s\n", err)
+		j.logInfo("failed to connect to local server: %s", err)
 		return
 	}
 	defer localCon.Close()
 
 	remoteCon, err := net.Dial("tcp", j.remoteServer)
 	if err != nil {
-		log.Printf("failed to connect to remote server: %s\n", err)
+		j.logInfo("failed to connect to remote server: %s", err)
 		return
 	}
 	defer remoteCon.Close()

@@ -23,7 +23,7 @@ func sanitize(subdomain string) string {
 
 func validate(subdomain *string) error {
 	if len(*subdomain) > 38 || len(*subdomain) < 3 {
-		return errors.New("subdomain length must be between 3 and 42")
+		return errors.New("subdomain length must be between 3 and 38")
 	}
 	if blockList[*subdomain] {
 		return errors.New("subdomain is in deny list")
@@ -31,7 +31,7 @@ func validate(subdomain *string) error {
 	if !regex.MatchString(*subdomain) {
 		*subdomain = sanitize(*subdomain)
 		if len(*subdomain) > 38 || len(*subdomain) < 3 {
-			return errors.New("subdomain length must be between 3 and 42")
+			return errors.New("subdomain length must be between 3 and 38")
 		}
 		if blockList[*subdomain] {
 			return errors.New("subdomain is in deny list")

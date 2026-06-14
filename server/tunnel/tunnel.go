@@ -123,22 +123,27 @@ func (t *tunnel) privateConnectionHandler(privateCon net.Conn) error {
 func Bind(src net.Conn, dst net.Conn, debug io.Writer) error {
 	defer src.Close()
 	defer dst.Close()
-	buf := make([]byte, 4096)
+	buf := make([]byte, 32768)
 	for {
-		_ = src.SetReadDeadline(time.Now().Add(time.Second))
+		_ = src.SetReadDeadline(time.Now().Add(5 * time.Second))
 		n, err := src.Read(buf)
-		if err == io.EOF {
-			break
+		if n > 0 {
+			_ = dst.SetWriteDeadline(time.Now().Add(10 * time.Second))
+			if _, werr := dst.Write(buf[:n]); werr != nil {
+				return werr
+			}
+			if debug != nil {
+				debug.Write(buf[:n])
+			}
 		}
-		_ = dst.SetWriteDeadline(time.Now().Add(time.Second))
-		_, err = dst.Write(buf[:n])
 		if err != nil {
+			if err == io.EOF {
+				return nil
+			}
+			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
+				continue
+			}
 			return err
 		}
-		if debug != nil {
-			debug.Write(buf[:n])
-		}
-		time.Sleep(10 * time.Millisecond)
 	}
-	return nil
 }

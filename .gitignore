@@ -5,8 +5,8 @@ package.json
 
 # binaries
 bin/
-cli/jprq
-server/jprq-server
-website/jprq-website
+cli/speedtunnel
+server/speedtunnel-server
+website/speedtunnel-website
 cli/web/static/jsconfig.json
-website/ssh/jprq-ssh
+website/ssh/speedtunnel-ssh

@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"encoding/json"
@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 )
 
-var localConfig = ".jprq-config"
+var localConfig = ".speedtunnel-config"
 var remoteConfig = "https://jprq.io/config.json"
 
 type Config struct {
@@ -26,7 +26,7 @@ func (c *Config) Load() error {
 	if err != nil {
 		return fmt.Errorf("error getting user config directory: %s", err)
 	}
-	filePath := filepath.Join(configDir, "jprq", localConfig)
+	filePath := filepath.Join(configDir, "speedtunnel", localConfig)
 	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return fmt.Errorf("error: no auth token, obtain at https://jprq.io/auth")
@@ -55,7 +55,7 @@ func (c *Config) Write() error {
 	if err != nil {
 		return fmt.Errorf("error getting user config directory: %s", err)
 	}
-	dirPath := filepath.Join(configDir, "jprq")
+	dirPath := filepath.Join(configDir, "speedtunnel")
 	if err := os.MkdirAll(dirPath, 0700); err != nil && os.IsNotExist(err) {
 		return fmt.Errorf("error creating config directory: %s", err)
 	}
@@ -64,8 +64,9 @@ func (c *Config) Write() error {
 	if err != nil {
 		return fmt.Errorf("error creating config file: %s", err)
 	}
+	defer file.Close()
 	if _, err = file.Write(content); err != nil {
-		return fmt.Errorf("error writitng to config file: %s", err)
+		return fmt.Errorf("error writing to config file: %s", err)
 	}
 	return nil
 }

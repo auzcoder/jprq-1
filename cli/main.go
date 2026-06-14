@@ -1,4 +1,4 @@
-package main
+package cli
 
 import (
 	"fmt"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-var version = "2.4"
+var version = "1.0.0"
 
 type Flags struct {
 	debug     bool
@@ -26,20 +26,20 @@ func printVersion() {
 }
 
 func printHelp() {
-	fmt.Printf("Usage: jprq <command> [arguments]\n\n")
+	fmt.Printf("Usage: speedtunnel <command> [arguments]\n\n")
 	fmt.Println("Commands:")
-	fmt.Println("  auth  <token>               Set authentication token from jprq.io/auth")
+	fmt.Println("  auth  <token>               Set authentication token")
 	fmt.Println("  tcp   <port>                Start a TCP tunnel on the specified port")
 	fmt.Println("  http  <port>                Start an HTTP tunnel on the specified port")
 	fmt.Println("  http  <port> -s <subdomain> Start an HTTP tunnel with a custom subdomain")
-	fmt.Println("  http  <port> --debug        Debug an HTTP tunnel with Jprq Debugger")
+	fmt.Println("  http  <port> --debug        Debug an HTTP tunnel with SpeedTunnel Debugger")
 	fmt.Println("  serve <dir>                 Serve files with built-in Http Server")
 	fmt.Println("  --help                      Show this help message")
 	fmt.Println("  --version                   Show the version number")
 	os.Exit(0)
 }
 
-func main() {
+func RunCLI() {
 	log.SetFlags(0)
 	if len(os.Args) < 2 {
 		log.Println("no command specified")
@@ -71,7 +71,7 @@ func main() {
 		protocol = command
 		port, _ = strconv.Atoi(arg)
 	default:
-		log.Fatalf("unknown command: %s, jprq --help", command)
+		log.Fatalf("unknown command: %s, speedtunnel --help", command)
 	}
 
 	if port <= 0 {
@@ -83,10 +83,10 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Printf("jprq %s \t press Ctrl+C to quit\n\n", version)
-	defer log.Println("jprq tunnel closed")
+	fmt.Printf("SpeedTunnel %s \t press Ctrl+C to quit\n\n", version)
+	defer log.Println("SpeedTunnel tunnel closed")
 
-	client := jprqClient{
+	client := TunnelClient{
 		config:    conf,
 		protocol:  protocol,
 		subdomain: flags.subdomain,
