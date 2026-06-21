@@ -113,16 +113,29 @@ func (j *Jprq) serveEventConn(conn net.Conn) error {
 	if request.Protocol != events.HTTP && request.Protocol != events.TCP {
 		return events.WriteError(conn, "invalid protocol %s", request.Protocol)
 	}
-	user, err := j.authenticator.Authenticate(request.AuthToken)
-	if err != nil {
-		return events.WriteError(conn, "authentication failed %s", "\n\tobtain auth token from https://jprq.io/auth\n")
-	}
+	var user github.User
+	var err error
+	if j.authenticator == nil {
+		remoteAddr := conn.RemoteAddr().String()
+		if host, _, err := net.SplitHostPort(remoteAddr); err == nil {
+			remoteAddr = host
+		}
+		user = github.User{
+			Login:   fmt.Sprintf("anon-%s", remoteAddr),
+			Allowed: true,
+		}
+	} else {
+		user, err = j.authenticator.Authenticate(request.AuthToken)
+		if err != nil {
+			return events.WriteError(conn, "authentication failed %s", "\n\tobtain auth token from https://jprq.io/auth\n")
+		}
 
-	j.mu.RLock()
-	_, allowedFound := j.allowedUsers[user.Login]
-	j.mu.RUnlock()
-	if !allowedFound && !user.Allowed {
-		return events.WriteError(conn, "SpeedTunnel is now invite-only service %s\n", "\n\tbuy membership - https://buymeacoffee.com/azimjon \n")
+		j.mu.RLock()
+		_, allowedFound := j.allowedUsers[user.Login]
+		j.mu.RUnlock()
+		if !allowedFound && !user.Allowed {
+			return events.WriteError(conn, "SpeedTunnel is now invite-only service %s\n", "\n\tbuy membership - https://buymeacoffee.com/azimjon \n")
+		}
 	}
 
 	j.mu.RLock()

@@ -66,10 +66,6 @@ func (a *App) StartTunnel(protocol string, portStr string, subdomain string) err
 		return fmt.Errorf("configuration error: %s", err)
 	}
 
-	// Override or verify token is set
-	if conf.Local.AuthToken == "" {
-		return fmt.Errorf("auth token is not set. Please set it in settings")
-	}
 
 	client := cli.NewTunnelClient(conf, protocol, subdomain, "")
 	client.LogCallback = func(msg string) {

@@ -113,12 +113,12 @@ appContainer.innerHTML = `
             <div class="glass-card">
                 <h2 class="card-title"><span>🔒</span> Authentication Settings</h2>
                 <p style="font-size: 13.5px; color: var(--text-secondary); margin-bottom: 20px;">
-                    SpeedTunnel requires an authentication token from the event server. You can obtain your free token at 
+                    SpeedTunnel supports authentication tokens for private servers (e.g. jprq.io). For tokenless or self-hosted servers, you can leave this field empty. You can obtain your free token at 
                     <a href="https://jprq.io/auth" target="_blank" class="alert-link" style="font-weight: 500;">jprq.io/auth</a>.
                 </p>
                 <div class="form-group">
-                    <label class="form-label" for="authToken">Auth Token</label>
-                    <input id="authToken" type="password" class="input-field" placeholder="Enter your token here" />
+                    <label class="form-label" for="authToken">Auth Token (Optional)</label>
+                    <input id="authToken" type="password" class="input-field" placeholder="Optional - Enter token if required" />
                     <div id="tokenStatus" class="token-status">Loading token status...</div>
                 </div>
                 <div style="margin-top: 24px;">
@@ -288,29 +288,21 @@ async function loadConfig() {
             authTokenInput.value = token;
             tokenStatus.className = 'token-status saved';
             tokenStatus.innerHTML = '✓ Token loaded successfully';
-            tokenWarning.style.display = 'none';
         } else {
-            tokenStatus.className = 'token-status missing';
-            tokenStatus.innerHTML = '✗ No token saved. Tunnels will not start without a token.';
-            tokenWarning.style.display = 'flex';
+            tokenStatus.className = 'token-status saved';
+            tokenStatus.innerHTML = '✓ Running in tokenless/optional mode';
         }
+        tokenWarning.style.display = 'none';
     } catch (err) {
         console.error('Error loading config:', err);
         tokenStatus.className = 'token-status missing';
         tokenStatus.innerHTML = '✗ Error reading configuration';
-        tokenWarning.style.display = 'flex';
     }
 }
 
 // Save Token
 saveTokenBtn.addEventListener('click', async () => {
     const rawToken = authTokenInput.value.trim();
-    if (!rawToken) {
-        tokenStatus.className = 'token-status missing';
-        tokenStatus.innerHTML = '✗ Token cannot be empty';
-        return;
-    }
-    
     saveTokenBtn.disabled = true;
     saveTokenBtn.innerHTML = 'Saving...';
     
@@ -318,9 +310,14 @@ saveTokenBtn.addEventListener('click', async () => {
         await SetToken(rawToken);
         state.token = rawToken;
         tokenStatus.className = 'token-status saved';
-        tokenStatus.innerHTML = '✓ Token saved successfully';
+        if (rawToken) {
+            tokenStatus.innerHTML = '✓ Token saved successfully';
+            appendLog('Auth token updated in local configuration.', 'success');
+        } else {
+            tokenStatus.innerHTML = '✓ Token cleared (Optional)';
+            appendLog('Auth token cleared from local configuration.', 'success');
+        }
         tokenWarning.style.display = 'none';
-        appendLog('Auth token updated in local configuration.', 'success');
     } catch (err) {
         tokenStatus.className = 'token-status missing';
         tokenStatus.innerHTML = `✗ Error saving: ${err}`;
@@ -338,12 +335,6 @@ toggleTunnelBtn.addEventListener('click', async () => {
         const protocol = protocolSelect.value;
         const port = portInput.value.trim();
         const subdomain = subdomainInput.value.trim();
-        
-        if (!state.token) {
-            appendLog('Cannot start tunnel: Auth token is missing.', 'error');
-            switchTab('settings');
-            return;
-        }
         
         if (!port || parseInt(port) <= 0 || parseInt(port) > 65535) {
             appendLog('Cannot start tunnel: Invalid port number.', 'error');

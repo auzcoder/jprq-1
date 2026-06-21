@@ -28,11 +28,8 @@ func (c *Config) Load() error {
 	}
 	filePath := filepath.Join(configDir, "speedtunnel", localConfig)
 	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return fmt.Errorf("error: no auth token, obtain at https://jprq.io/auth")
-	}
-	if err := json.Unmarshal(data, &c.Local); err != nil {
-		return fmt.Errorf("error unmarshaling config file contents: %s", err)
+	if err == nil {
+		_ = json.Unmarshal(data, &c.Local)
 	}
 	response, err := http.Get(remoteConfig)
 	if err != nil || response.StatusCode != http.StatusOK {

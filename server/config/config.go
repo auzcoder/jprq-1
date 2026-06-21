@@ -38,8 +38,5 @@ func (c *Config) Load() error {
 	if c.TLSKeyFile == "" || c.TLSCertFile == "" {
 		return errors.New("TLS key/cert file is missing")
 	}
-	if c.GithubClientID == "" || c.GithubClientSecret == "" {
-		return errors.New("github client id/secret is missing")
-	}
 	return nil
 }
